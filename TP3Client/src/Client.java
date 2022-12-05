@@ -1,14 +1,18 @@
 import java.net.*;
 import java.io.*;
+import java.util.Scanner;
 
 public class Client implements Runnable
 {
     protected ServerSocket serverSocket; //Établit la connexion entre deux sockets
     protected Socket socket; //Socket connecté à un autre socket (client ou autre serveur)
+    protected DataInputStream consoleIn;
     protected DataInputStream dataInputStream; //Stream par lequel le socket va recevoir de l'information de l'autre socket
     protected DataOutputStream dataOutputStream; //Stream par lequel le socket va envoyer de l'information à l'autre socket
     protected String address;
     protected int port; //Port sur lequel va établir la connexion
+
+    protected Scanner scanner;
 
     public Client(String address, int port)
     {
@@ -18,19 +22,33 @@ public class Client implements Runnable
         try
         {
             socket = new Socket(address,port);
-            System.out.println("Client connected");
+            System.out.println("Connection successful");
 
-            dataInputStream = new DataInputStream(System.in);
+            consoleIn = new DataInputStream(System.in);
+            dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            scanner = new Scanner(System.in);
 
             String line = "";
+            String gameMsg = "";
+            String gameBoard = "";
 
-            while(!line.equals("Fini"))
+            while(!line.equals("Disconnect"))
             {
                 try
                 {
-                    line = dataInputStream.readLine();
-                    dataOutputStream.writeUTF(line);
+                    gameMsg = dataInputStream.readUTF(); //Aller chercher l'info du serveur
+                    System.out.println(gameMsg); // Affichage du message du serveur
+                    if(gameMsg.equals("It's your turn!"))
+                    {
+                        gameBoard = dataInputStream.readUTF();
+                        System.out.println(gameBoard);
+                        System.out.println("Enter your move : ");
+                        line = consoleIn.readLine(); //Entrée du move
+                        dataOutputStream.writeUTF(line); //Communiquer le move au serveur
+                        gameBoard = dataInputStream.readUTF();
+                        System.out.println(gameBoard);
+                    }
                 }
                 catch(IOException e)
                 {
