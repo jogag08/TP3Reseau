@@ -11,8 +11,8 @@ public class Client implements Runnable
     protected DataOutputStream dataOutputStream; //Stream par lequel le socket va envoyer de l'information à l'autre socket
     protected String address;
     protected int port; //Port sur lequel va établir la connexion
+    //protected Scanner scanner;
 
-    protected Scanner scanner;
 
     public Client(String address, int port)
     {
@@ -27,11 +27,12 @@ public class Client implements Runnable
             consoleIn = new DataInputStream(System.in);
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            scanner = new Scanner(System.in);
+            //scanner = new Scanner(System.in);
 
             String line = "";
             String gameMsg = "";
             String gameBoard = "";
+            String verifInput = "Denied";
 
             while(!line.equals("Disconnect"))
             {
@@ -43,9 +44,18 @@ public class Client implements Runnable
                     {
                         gameBoard = dataInputStream.readUTF();
                         System.out.println(gameBoard);
-                        System.out.println("Enter your move : ");
-                        line = consoleIn.readLine(); //Entrée du move
-                        dataOutputStream.writeUTF(line); //Communiquer le move au serveur
+                        verifInput = "Denied";
+                        while (verifInput.equals("Denied"))
+                        {
+                            System.out.println("Enter your move : ");
+                            line = consoleIn.readLine(); //Entrée du move
+                            dataOutputStream.writeUTF(line); //Communiquer le move au serveur
+                            verifInput = dataInputStream.readUTF();
+                            //System.out.println(verifInput + "VerifInput");
+                        }
+
+                        //CONDITION SI L'INPUT EST OKAY
+
                         gameBoard = dataInputStream.readUTF();
                         System.out.println(gameBoard);
                     }
