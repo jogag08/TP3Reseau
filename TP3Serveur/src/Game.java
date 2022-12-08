@@ -5,8 +5,15 @@ import java.util.Vector;
 
 public class Game extends Serveur
 {
+    String player1Req = "";
+    String player2Req = "";
     boolean gameIsActive = true;
+    boolean connected = true;
     boolean TestInput = false;
+    boolean player1Win = false;
+    boolean player2Win = false;
+    String player1Rematch = "";
+    String player2Rematch = "";
     String[] boardPos = {"11", "12", "13", "21", "22", "23", "31", "32", "33"};
     String[] boardInfo = {"#", "#", "#", "#", "#", "#", "#", "#", "#"};
 
@@ -34,80 +41,103 @@ public class Game extends Serveur
     {
         super.run();
         CreateWinPossibilities();
-        while(gameIsActive)
+        while(connected)
         {
-            PlayGame();
+            while(gameIsActive)
+            {
+                PlayGame();
+            }
         }
+        System.out.println("FINI");
     }
 
     public void PlayGame()
     {
-        String player1Req = "";
-        String player2Req = "";
-        while (!player1Req.equals("RageQuit") || !player2Req.equals("RageQuit"))
+        while (gameIsActive)
         {
-            try
+            while (!player1Req.equals("Disconnect") || !player2Req.equals("Disconnect"))
             {
-                if(turn == 0)
+                try
                 {
-                    dataOutputStream1.writeUTF("It's your turn!");
-                    dataOutputStream1.writeUTF(RenderBoard());
-                    dataOutputStream2.writeUTF("Player One is making a move...");
-                    while(!TestInput)
+                    if(turn == 0)
                     {
-                        //dataOutputStream1.writeUTF("A");
-                        System.out.println("test1");
-                        player1Req = dataInputStream1.readUTF();
-                        SetBoard(player1Req, "X");
-                        //System.out.println("test2");
-                       //if(!TestInput)
-                       //{
-                       //    dataOutputStream1.writeUTF("Denied");
-                       //}
-                       //else if (TestInput)
-                       //{
-                       //    dataOutputStream1.writeUTF("Accepted");
-                       //}
-                        //System.out.println(player1Req);
-                        //System.out.println("test3");
+                        dataOutputStream1.writeUTF("It's your turn!");
+                        dataOutputStream1.writeUTF(RenderBoard());
+                        dataOutputStream2.writeUTF("Player One is making a move...");
+                        while(!TestInput)
+                        {
+                            //dataOutputStream1.writeUTF("A");
+                            player1Req = dataInputStream1.readUTF();
+                            SetBoard(player1Req, "X");
+                            //System.out.println("test2");
+                            //if(!TestInput)
+                            //{
+                            //    dataOutputStream1.writeUTF("Denied");
+                            //}
+                            //else if (TestInput)
+                            //{
+                            //    dataOutputStream1.writeUTF("Accepted");
+                            //}
+                            //System.out.println(player1Req);
+                            //System.out.println("test3");
+                        }
+                        TestInput = false;
+                        SetPlayer1Positions(player1Req);
+                        dataOutputStream1.writeUTF(RenderBoard());
+                        //System.out.println("Player 1 :  " + player1Req);
+                        //System.out.println(player1Positions);
+                        if(CheckWin(player1Positions))
+                        {
+                            turn = 2;
+                            player1Win = true;
+                            System.out.println("Player One won!");
+                        };
                     }
-                    TestInput = false;
-                    SetPlayer1Positions(player1Req);
-                    dataOutputStream1.writeUTF(RenderBoard());
-                    //System.out.println("Player 1 :  " + player1Req);
-                    //System.out.println(player1Positions);
-                    if(CheckWin(player1Positions))
-                    {
-                        System.out.println("Player One won!");
-                    };
-                }
 
-                if(turn == 1)
-                {
-                    dataOutputStream2.writeUTF("It's your turn!");
-                    dataOutputStream2.writeUTF(RenderBoard());
-                    dataOutputStream1.writeUTF("Player Two is making a move...");
-                    while(!TestInput)
+                    if(turn == 1)
                     {
-                        player2Req = dataInputStream2.readUTF();
-                        SetBoard(player2Req, "O");
+                        dataOutputStream2.writeUTF("It's your turn!");
+                        dataOutputStream2.writeUTF(RenderBoard());
+                        dataOutputStream1.writeUTF("Player Two is making a move...");
+                        while(!TestInput)
+                        {
+                            player2Req = dataInputStream2.readUTF();
+                            SetBoard(player2Req, "O");
+                        }
+                        TestInput = false;
+                        SetPlayer2Positions(player2Req);
+                        dataOutputStream2.writeUTF(RenderBoard());
+                        //System.out.println("Player 2 :  " + player2Req);
+                        if(CheckWin(player2Positions))
+                        {
+                            turn = 2;
+                            player2Win = true;
+                            System.out.println("Player Two won!");
+                        };
                     }
-                    TestInput = false;
-                    SetPlayer2Positions(player2Req);
-                    dataOutputStream2.writeUTF(RenderBoard());
-                    //System.out.println("Player 2 :  " + player2Req);
-                    if(CheckWin(player2Positions))
+
+                    if(!player1Win && !player2Win)
                     {
-                        System.out.println("Player Two won!");
-                    };
+                        dataOutputStream1.writeUTF(""); //Si vide, la partie continue
+                        dataOutputStream2.writeUTF("");
+                        ManageTurns(turn);
+                    }
+                    else
+                    {
+                        //System.out.println(turn + " turn");
+                        AnnounceWinner(player1Win, player2Win);
+                        dataOutputStream1.writeUTF(RenderBoard());
+                        dataOutputStream2.writeUTF(RenderBoard());
+                        RestartGame();
+                    }
                 }
-                ManageTurns(turn);
-            }
-            catch (Exception e) {
-                System.out.println(e);
+                catch (Exception e) {
+                    System.out.println(e);
+                }
             }
         }
-        gameIsActive = false;
+
+        //gameIsActive = false;
     }
 
     public void ManageTurns(int t)
@@ -199,7 +229,6 @@ public class Game extends Serveur
         if(playerPositions.containsAll(winningCombination8)){return true;}
         else return false;
     }
-
     public void CreateWinPossibilities()
     {
         winningCombination1.add("11"); winningCombination1.add("12"); winningCombination1.add("13");
@@ -210,5 +239,70 @@ public class Game extends Serveur
         winningCombination6.add("13"); winningCombination6.add("23"); winningCombination6.add("33");
         winningCombination7.add("11"); winningCombination7.add("22"); winningCombination7.add("33");
         winningCombination8.add("13"); winningCombination8.add("22"); winningCombination8.add("31");
+    }
+    public  void AnnounceWinner(boolean p1Win, boolean p2Win)
+    {
+        try
+        {
+            if(p1Win)
+            {
+                dataOutputStream1.writeUTF("You won!");
+                dataOutputStream2.writeUTF("You lose!");
+            }
+            else if(p2Win)
+            {
+                dataOutputStream1.writeUTF("You lose!");
+                dataOutputStream2.writeUTF("You won!");
+            }
+
+        }
+        catch (Exception e)
+        {
+            System.out.println(e);
+        }
+    }
+
+    public void RestartGame()
+    {
+        try
+        {
+            player1Rematch = dataInputStream1.readUTF();
+            player2Rematch = dataInputStream2.readUTF();
+
+            if(player1Rematch.equals("YES") && player2Rematch.equals("YES"))
+            {
+                player1Req = "";
+                player2Req = "";
+                connected = true;
+                TestInput = false;
+                player1Win = false;
+                player2Win = false;
+                player1Rematch = "";
+                player2Rematch = "";
+                turn = 0;
+                player1Positions.clear();
+                player2Positions.clear();
+
+                for(int i = 0; i < boardPos.length; i++)
+                {
+                    boardInfo[i] = "#";
+                }
+
+                //gameIsActive = false;
+                //PlayGame();
+            }
+            else
+            {
+                //System.out.println("NO");
+                gameIsActive = false;
+                connected = false;
+                player1Req = "Disconnect";
+                player2Req = "Disconnect";
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println(e);
+        }
     }
 }

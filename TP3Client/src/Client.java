@@ -11,7 +11,6 @@ public class Client implements Runnable
     protected DataOutputStream dataOutputStream; //Stream par lequel le socket va envoyer de l'information à l'autre socket
     protected String address;
     protected int port; //Port sur lequel va établir la connexion
-    //protected Scanner scanner;
 
 
     public Client(String address, int port)
@@ -27,12 +26,13 @@ public class Client implements Runnable
             consoleIn = new DataInputStream(System.in);
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            //scanner = new Scanner(System.in);
 
             String line = "";
             String gameMsg = "";
             String gameBoard = "";
             String verifInput = "Denied";
+            String winLose = "";
+            String rematch = "";
 
             while(!line.equals("Disconnect"))
             {
@@ -51,13 +51,37 @@ public class Client implements Runnable
                             line = consoleIn.readLine(); //Entrée du move
                             dataOutputStream.writeUTF(line); //Communiquer le move au serveur
                             verifInput = dataInputStream.readUTF();
-                            //System.out.println(verifInput + "VerifInput");
                         }
-
-                        //CONDITION SI L'INPUT EST OKAY
 
                         gameBoard = dataInputStream.readUTF();
                         System.out.println(gameBoard);
+                    }
+                    winLose = dataInputStream.readUTF();
+                    System.out.println(winLose);
+                    while(!winLose.equals(""))
+                    {
+                        gameBoard = dataInputStream.readUTF();
+                        System.out.println(gameBoard);
+                        while(!rematch.equals("YES") && !rematch.equals(("NO")))
+                        {
+                            System.out.println("Rematch? YES or NO :");
+                            rematch = consoleIn.readLine(); //Entrée du move
+                        }
+                        dataOutputStream.writeUTF(rematch); //Communiquer le move au serveur
+
+                        if(rematch.equals("YES"))
+                        {
+                            line = "";
+                            gameMsg = "";
+                            gameBoard = "";
+                            verifInput = "Denied";
+                            winLose = "";
+                            rematch = "";
+                        }
+                        if(rematch.equals("NO"))
+                        {
+                            line = "Disconnect";
+                        }
                     }
                 }
                 catch(IOException e)
